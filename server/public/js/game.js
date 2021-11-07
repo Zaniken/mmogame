@@ -73,6 +73,7 @@ function update() {
     } else {
         this.leftKeyPressed = false;
         this.rightKeyPressed = false;
+        //test
     }
     if (cursors.W.isDown) {
         this.upKeyPressed = true;
