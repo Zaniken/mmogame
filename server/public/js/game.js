@@ -3,17 +3,20 @@ var config = {
     parent: 'phaser-example',
     width: 800,
     height: 600,
+    backgroundColor: '#4488aa',
     scene: {
         preload: preload,
         create: create,
-        update: update
+        update: update,
+
     }
 };
 var game = new Phaser.Game(config);
 
 function preload() {
-    this.load.image('ship', 'assets/spaceShips_001.png');
-    this.load.image('otherPlayer', 'assets/enemyBlack5.png');
+    // this.load.image('ship', 'assets/spaceShips_001.png');
+    // this.load.image('otherPlayer', 'assets/enemyBlack5.png');
+    this.load.spritesheet('queen', 'assets/queen.png', { frameWidth: 32, frameHeight: 32 });
 }
 
 var cursors;
@@ -23,18 +26,36 @@ function create() {
     var self = this;
     this.socket = io();
     this.players = this.add.group();
+
+    this.anims.create({
+        key: "move",
+        frameRate: 7,
+        frames: this.anims.generateFrameNumbers("queen", { start: 0, end: 1 }),
+        repeat: -1
+    });
+
+    this.anims.create({
+        key: "pause",
+        frameRate: 2,
+        frames: this.anims.generateFrameNumbers("queen", { start: 0, end: 0 }),
+        repeat: -1
+    });
+
+
+
+
     this.socket.on('currentPlayers', function(players) {
         Object.keys(players).forEach(function(id) {
             if (players[id].playerId === self.socket.id) {
-                displayPlayers(self, players[id], 'ship');
+                displayPlayers(self, players[id], 'queen');
             } else {
-                displayPlayers(self, players[id], 'otherPlayer');
+                displayPlayers(self, players[id], 'queen');
             }
         });
     });
 
     this.socket.on('newPlayer', function(playerInfo) {
-        displayPlayers(self, playerInfo, 'otherPlayer');
+        displayPlayers(self, playerInfo, 'queen');
     });
     this.socket.on('disconnectUser', function(playerId) {
         self.players.getChildren().forEach(function(player) {
@@ -49,16 +70,25 @@ function create() {
                 if (players[id].playerId === player.playerId) {
                     player.setRotation(players[id].rotation);
                     player.setPosition(players[id].x, players[id].y);
+                    player.anims.play(String(players[id].animationState), true)
+                        // console.log(id + " " + players[id].animationState)
                 }
+                // if (players[id].animationState === 'moving') {
+                //     player.play('move')
+                //     console.log("moving")
+                // }
             });
         });
     });
 
-    //todo make keys work
+
     cursors = this.input.keyboard.addKeys("W,A,S,D");
     this.leftKeyPressed = false;
     this.rightKeyPressed = false;
     this.upKeyPressed = false;
+
+
+
 
 }
 
@@ -82,6 +112,7 @@ function update() {
         this.upKeyPressed = false;
     }
     if (left !== this.leftKeyPressed || right !== this.rightKeyPressed || up !== this.upKeyPressed) {
+
         this.socket.emit('playerInput', { left: this.leftKeyPressed, right: this.rightKeyPressed, up: this.upKeyPressed });
     }
 }
