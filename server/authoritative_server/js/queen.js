@@ -8,13 +8,13 @@ class Queen {
         this.energy = 0;
         this.animationState = "pause";
         this.team = (Math.floor(Math.random() * 2) == 0) ? 'red' : 'blue';
+        this.target = new Phaser.Math.Vector2();
         this.input = {
-            left: false,
-            right: false,
-            up: false,
-            attack: false,
-            egg: false
+
+            eAttack: false,
+            qAttack: false
         };
+
 
     };
 
