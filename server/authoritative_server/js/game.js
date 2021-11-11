@@ -1,4 +1,5 @@
 const players = {};
+const sugars = {};
 
 const config = {
     type: Phaser.HEADLESS,
@@ -22,9 +23,12 @@ const config = {
 
 function preload() {
     // this.load.image('ship', 'assets/spaceShips_001.png');
-    this.load.spritesheet('queen', 'assets/queen.png', { frameWidth: 32, frameHeight: 32 });
+    this.load.spritesheet('queen', 'assets/ant.png', { frameWidth: 32, frameHeight: 32 });
+    this.load.spritesheet('sugar', 'assets/sugar.png', { frameWidth: 32, frameHeight: 32 });
+    this.load.spritesheet('egg', 'assets/egg.png', { frameWidth: 32, frameHeight: 32 });
+
 }
-var timer;
+
 
 function create() {
     const self = this;
@@ -37,6 +41,7 @@ function create() {
         addPlayer(self, players[socket.id]);
         // send the players object to the new player
         socket.emit('currentPlayers', players);
+        socket.emit("currentSugars", sugars);
         // update all other players of the new player
         socket.broadcast.emit('newPlayer', players[socket.id]);
         socket.on('disconnect', function() {
@@ -50,7 +55,7 @@ function create() {
         });
         // when a player moves, update the player data
         socket.on('playerInput', function(inputData) {
-            // handlePlayerInput(self, socket.id, inputData);
+            handlePlayerInput(self, socket.id, inputData);
             console.log("E pressed: " + inputData.e + " Q pressed: " + inputData.q);
         });
 
@@ -62,9 +67,50 @@ function create() {
         });
     });
 
-    this.sugar = this.physics.add.group();
+    // sugar timer stuff 
+    this.sugars = this.physics.add.group();
+    //this.monsterTimer = game.time.events.loop(Phaser.Timer.SECOND, this.addMonster, this);
+    this.timedEventSugar = this.time.addEvent({ delay: 10000, callback: makeSugar, callbackScope: this, loop: true });
+
+    //collision stuff
+    this.physics.add.overlap(this.sugars, this.players, antSugar);
+}
+
+
+//ant attacking sugar
+function antSugar(sugar, ant) {
+    // console.log(players[ant.playerId].input.e);
+    if (players[ant.playerId].input.e) {
+        players[ant.playerId].input.e = false;
+        console.log("attcking sugar");
+        sugars[sugar.id].takeDamage();
+        players[ant.playerId].getEnergy();
+        if (sugars[sugar.id].hp <= 0) {
+
+            io.emit('destroySugar', sugar.id);
+            sugar.destroy();
+
+            delete sugars[sugar.id];
+        }
+    }
+}
+var sugarID = 0;
+
+function makeSugar() {
+    var self = this;
+    sugarID++;
+    sugars[sugarID] = new Sugar(sugarID);
+    const sugar = self.physics.add.image(sugars[sugarID].x, sugars[sugarID].y, 'sugar').setOrigin(0.5, 0.5).setDisplaySize(32, 32);
+    sugar.id = sugarID;
+    self.sugars.add(sugar);
+    io.emit('newSugar', sugars[sugarID]);
+    console.log("Sugar function called " + sugars[sugarID].x);
+}
+
+function makeEgg() {
 
 }
+
 
 function update() {
     this.players.getChildren().forEach((player) => {
@@ -106,16 +152,18 @@ function update() {
         players[player.playerId].rotation = player.rotation;
     });
     this.physics.world.wrap(this.players, 5);
+    //var objects = { players, sugars };
     io.emit('playerUpdates', players);
+
 }
 
-// function handlePlayerInput(self, playerId, input) {
-//     self.players.getChildren().forEach((player) => {
-//         if (playerId === player.playerId) {
-//             players[player.playerId].input = input;
-//         }
-//     });
-// }
+function handlePlayerInput(self, playerId, input) {
+    self.players.getChildren().forEach((player) => {
+        if (playerId === player.playerId) {
+            players[player.playerId].input = input;
+        }
+    });
+}
 
 function handlePlayerInput2(self, playerId, target) {
     self.players.getChildren().forEach((player) => {
@@ -136,8 +184,10 @@ function handlePlayerInput2(self, playerId, target) {
 
 }
 
+
+
 function addPlayer(self, playerInfo) {
-    const player = self.physics.add.image(playerInfo.x, playerInfo.y, 'queen').setOrigin(0.5, 0.5).setDisplaySize(53, 40);
+    const player = self.physics.add.image(playerInfo.x, playerInfo.y, 'queen').setOrigin(0.5, 0.5).setDisplaySize(32, 32);
     player.setDrag(100);
     // player.setAngularDrag(100);
     // player.setMaxVelocity(200);
@@ -152,5 +202,7 @@ function removePlayer(self, playerId) {
         }
     });
 }
+const game = new Phaser.Game(config);
+window.gameLoaded();
 const game = new Phaser.Game(config);
 window.gameLoaded();

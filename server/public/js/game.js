@@ -17,6 +17,7 @@ function preload() {
     // this.load.image('ship', 'assets/spaceShips_001.png');
     // this.load.image('otherPlayer', 'assets/enemyBlack5.png');
     this.load.spritesheet('queen', 'assets/ant.png', { frameWidth: 32, frameHeight: 32 });
+    this.load.spritesheet('sugar', 'assets/sugar.png', { frameWidth: 32, frameHeight: 32 });
 }
 
 var cursors;
@@ -26,6 +27,7 @@ function create() {
     var self = this;
     this.socket = io();
     this.players = this.add.group();
+    this.sugars = this.add.group();
 
     this.anims.create({
         key: "move",
@@ -42,7 +44,18 @@ function create() {
     });
 
 
-
+    this.socket.on('currentSugars', function(sugars) {
+        Object.keys(sugars).forEach(function(id) {
+            displaySugar(self, sugars[id])
+        });
+    });
+    this.socket.on('destroySugar', function(sugarId) {
+        self.sugars.getChildren().forEach(function(sugar) {
+            if (sugarId === sugar.sugarId) {
+                sugar.destroy();
+            }
+        });
+    });
 
     this.socket.on('currentPlayers', function(players) {
         Object.keys(players).forEach(function(id) {
@@ -79,6 +92,10 @@ function create() {
                 // }
             });
         });
+    });
+    this.socket.on('newSugar', function(sugar) {
+        displaySugar(self, sugar);
+        console.log("Received new sugar")
     });
 
     var target = new Phaser.Math.Vector2();
@@ -153,11 +170,20 @@ function update() {
     // }
 }
 
+function displaySugar(self, sugar) {
+    const sugarSprite = self.add.sprite(sugar.x, sugar.y, "sugar").setOrigin(0.5, 0.5).setDisplaySize(32, 32);
+
+    sugarSprite.sugarId = sugar.id;
+    self.sugars.add(sugarSprite);
+
+}
+
 function displayPlayers(self, playerInfo, sprite) {
-    const player = self.add.sprite(playerInfo.x, playerInfo.y, sprite).setOrigin(0.5, 0.5).setDisplaySize(53, 40);
+    const player = self.add.sprite(playerInfo.x, playerInfo.y, sprite).setOrigin(0.5, 0.5).setDisplaySize(32, 32);
     if (playerInfo.team === 'blue') player.setTint(0x0000ff);
     else player.setTint(0xff0000);
     player.playerId = playerInfo.playerId;
+    player.setDepth(2);
     self.players.add(player);
 
 }

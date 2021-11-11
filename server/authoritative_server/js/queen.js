@@ -10,9 +10,10 @@ class Queen {
         this.team = (Math.floor(Math.random() * 2) == 0) ? 'red' : 'blue';
         this.target = new Phaser.Math.Vector2();
         this.input = {
-
-            eAttack: false,
-            qAttack: false
+            //lay egg
+            q: false,
+            //attack
+            e: false
         };
 
 
