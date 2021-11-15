@@ -35,9 +35,14 @@ class Queen {
     getEnergy() {
         this.energy += 10;
     }
+    
+    getHealth(){
+        this.health+=5;
+    }
     layEgg() {
-        if (this.energy > 50) {
-            this.energy -= 50;
+        console.log(this.energy);
+        if (this.energy >= 20) {
+            this.energy -= 20;
             return true;
 
         } else {

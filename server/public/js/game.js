@@ -18,6 +18,7 @@ function preload() {
     // this.load.image('otherPlayer', 'assets/enemyBlack5.png');
     this.load.spritesheet('queen', 'assets/ant.png', { frameWidth: 32, frameHeight: 32 });
     this.load.spritesheet('sugar', 'assets/sugar.png', { frameWidth: 32, frameHeight: 32 });
+    this.load.spritesheet('egg', 'assets/egg.png', { frameWidth: 32, frameHeight: 32 });
 }
 
 var cursors;
@@ -28,6 +29,7 @@ function create() {
     this.socket = io();
     this.players = this.add.group();
     this.sugars = this.add.group();
+    this.eggs = this.add.group();
 
     this.anims.create({
         key: "move",
@@ -49,10 +51,22 @@ function create() {
             displaySugar(self, sugars[id])
         });
     });
+    this.socket.on('currentEggs', function(eggs) {
+        Object.keys(eggs).forEach(function(id) {
+            displayEgg(self, eggs[id])
+        });
+    });
     this.socket.on('destroySugar', function(sugarId) {
         self.sugars.getChildren().forEach(function(sugar) {
             if (sugarId === sugar.sugarId) {
                 sugar.destroy();
+            }
+        });
+    });
+    this.socket.on('destroyEgg', function(eggId) {
+        self.eggs.getChildren().forEach(function(egg) {
+            if (eggId === egg.eggId) {
+                egg.destroy();
             }
         });
     });
@@ -95,6 +109,10 @@ function create() {
     });
     this.socket.on('newSugar', function(sugar) {
         displaySugar(self, sugar);
+        console.log("Received new sugar")
+    });
+    this.socket.on('newEgg', function(egg) {
+        displayEgg(self, egg);
         console.log("Received new sugar")
     });
 
@@ -175,6 +193,15 @@ function displaySugar(self, sugar) {
 
     sugarSprite.sugarId = sugar.id;
     self.sugars.add(sugarSprite);
+
+}
+
+function displayEgg(self, egg) {
+    const eggSprite = self.add.sprite(egg.x, egg.y, "egg").setOrigin(0.5, 0.5).setDisplaySize(32, 32);
+    if (egg.team === 'blue') eggSprite.setTint(0x0000ff);
+    else eggSprite.setTint(0xff0000);
+    eggSprite.eggId = egg.id;
+    self.eggs.add(eggSprite);
 
 }
 

@@ -2,7 +2,7 @@ const playerObjects = {};
 const sugarObjects = {};
 const eggObjects = {};
 
-
+var test;
 
 const config = {
     type: Phaser.HEADLESS,
@@ -45,6 +45,7 @@ function create() {
         // send the players object to the new player
         socket.emit('currentPlayers', playerObjects);
         socket.emit("currentSugars", sugarObjects);
+        socket.emit('currentEggs', eggObjects);
         // update all other players of the new player
         socket.broadcast.emit('newPlayer', playerObjects[socket.id]);
         socket.on('disconnect', function() {
@@ -73,6 +74,7 @@ function create() {
     // sugar timer stuff 
     this.sugarPhaserObjects = this.physics.add.group();
     this.eggPhaserObjects = this.physics.add.group();
+    test = this;
     //this.monsterTimer = game.time.events.loop(Phaser.Timer.SECOND, this.addMonster, this); <- old ps2 
     this.timedEventSugar = this.time.addEvent({ delay: 10000, callback: makeSugar, callbackScope: this, loop: true });
 
@@ -80,7 +82,7 @@ function create() {
     this.physics.add.overlap(this.sugarPhaserObjects, this.playerPhaserObjects, antSugar);
 }
 
-
+//player eating sugar
 function antSugar(sugarPhaser, playerPhaser) {
     // console.log(playerObjects); var = {obj qeen queen}
     //console.log(sugarObjects); var {1: sugar, 2: sugar}
@@ -90,6 +92,7 @@ function antSugar(sugarPhaser, playerPhaser) {
         playerObjects[playerPhaser.playerId].input.e = false;
         console.log("attcking sugar");
         sugarObjects[sugarPhaser.id].takeDamage();
+        playerObjects[playerPhaser.playerId].getHealth();
         playerObjects[playerPhaser.playerId].getEnergy();
         if (sugarObjects[sugarPhaser.id].hp <= 0) {
 
@@ -112,18 +115,20 @@ function makeSugar() {
     io.emit('newSugar', sugarObjects[sugarIdCounter]);
     console.log("Sugar function called " + sugarObjects[sugarIdCounter].x);
 }
-var eggId = 0;
+var eggIdCounter = 0;
 
-// function makeEgg() {
-//     var self = this;
-//     eggId++;
-//     sugars[eggId] = new Egg(eggId);
-//     const Egg = self.physics.add.image(sugars[eggId].x, sugars[eggId].y, 'sugar').setOrigin(0.5, 0.5).setDisplaySize(32, 32);
-//     sugar.id = eggId;
-//     self.sugars.add(sugar);
-//     io.emit('newSugar', sugars[eggId]);
-//     console.log("Sugar function called " + sugars[eggId].x);
-// }
+function makeEgg(player) {
+    // var self = this;
+    console.log("makeegg was ran");
+    eggIdCounter++;
+    eggObjects[eggIdCounter] = new Egg(eggIdCounter, playerObjects[player.playerId].team, player.x, player.y);
+    console.log(eggObjects[eggIdCounter]);
+    const egg = test.physics.add.image(eggObjects[eggIdCounter].x, eggObjects[eggIdCounter].y, 'egg').setOrigin(0.5, 0.5).setDisplaySize(32, 32);
+    egg.id = eggIdCounter;
+    test.eggPhaserObjects.add(egg);
+    io.emit('newEgg', eggObjects[eggIdCounter]);
+    console.log("egg function called " + eggObjects[eggIdCounter].x);
+}
 
 
 function update() {
@@ -143,6 +148,16 @@ function update() {
                 player.setAcceleration(0);
                 player.setVelocity(0);
                 playerObjects[player.playerId].moving(false);
+            }
+        }
+        //lay egg 
+        if (input.q) {
+            input.q = false;
+            console.log("Debug: Trying to lay egg");
+            if (playerObjects[player.playerId].layEgg()) {
+                console.log("Debug: Trying to lay egg inner loop check");
+                //TODO Test is makeEGG is allowed here?
+                makeEgg(player);
             }
         }
         // if (input.left) {
