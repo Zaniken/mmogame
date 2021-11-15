@@ -43,11 +43,11 @@ function create() {
         // add player to server
         addPlayer(self, playerObjects[socket.id]);
         // send the players object to the new player
-        socket.emit('currentPlayers', playerObjects);
-        socket.emit("currentSugars", sugarObjects);
-        socket.emit('currentEggs', eggObjects);
+        socket.emit('currentObjects', playerObjects);
+        socket.emit("currentObjects", sugarObjects);
+        socket.emit('currentObjects', eggObjects);
         // update all other players of the new player
-        socket.broadcast.emit('newPlayer', playerObjects[socket.id]);
+        socket.broadcast.emit('newObj', playerObjects[socket.id]);
         socket.on('disconnect', function() {
             console.log('user disconnected');
             // remove player from server
@@ -88,58 +88,75 @@ function antSugar(sugarPhaser, playerPhaser) {
     //console.log(sugarObjects); var {1: sugar, 2: sugar}
     // console.log(this.sugars); == undefined
     // console.log(this.players); == undefined
-    if (playerObjects[playerPhaser.playerId].input.e) {
-        playerObjects[playerPhaser.playerId].input.e = false;
+    if (playerObjects[playerPhaser.id].input.e) {
+        playerObjects[playerPhaser.id].input.e = false;
         console.log("attcking sugar");
         sugarObjects[sugarPhaser.id].takeDamage();
-        playerObjects[playerPhaser.playerId].getHealth();
-        playerObjects[playerPhaser.playerId].getEnergy();
+        playerObjects[playerPhaser.id].getHealth();
+        playerObjects[playerPhaser.id].getEnergy();
         if (sugarObjects[sugarPhaser.id].hp <= 0) {
 
-            io.emit('destroySugar', sugarPhaser.id);
+            io.emit('destroyObject', sugarObjects[sugarPhaser.id]);
             sugarPhaser.destroy();
 
             delete sugarObjects[sugarPhaser.id];
         }
     }
 }
-var sugarIdCounter = 0;
+var objectIdCounter = 0;
 
 function makeSugar() {
     var self = this;
-    sugarIdCounter++;
-    sugarObjects[sugarIdCounter] = new Sugar(sugarIdCounter);
-    const sugar = self.physics.add.image(sugarObjects[sugarIdCounter].x, sugarObjects[sugarIdCounter].y, 'sugar').setOrigin(0.5, 0.5).setDisplaySize(32, 32);
-    sugar.id = sugarIdCounter;
+    objectIdCounter++;
+    sugarObjects[objectIdCounter] = new Sugar(objectIdCounter);
+    const sugar = self.physics.add.image(sugarObjects[objectIdCounter].x, sugarObjects[objectIdCounter].y, 'sugar').setOrigin(0.5, 0.5).setDisplaySize(32, 32);
+    sugar.id = objectIdCounter;
     self.sugarPhaserObjects.add(sugar);
-    io.emit('newSugar', sugarObjects[sugarIdCounter]);
-    console.log("Sugar function called " + sugarObjects[sugarIdCounter].x);
+    io.emit('newObj', sugarObjects[objectIdCounter]);
+    console.log("Sugar function called " + sugarObjects[objectIdCounter].x);
 }
-var eggIdCounter = 0;
+//var objectIdCounter = 0;
 
 function makeEgg(player) {
     // var self = this;
     console.log("makeegg was ran");
-    eggIdCounter++;
-    eggObjects[eggIdCounter] = new Egg(eggIdCounter, playerObjects[player.playerId].team, player.x, player.y);
-    console.log(eggObjects[eggIdCounter]);
-    const egg = test.physics.add.image(eggObjects[eggIdCounter].x, eggObjects[eggIdCounter].y, 'egg').setOrigin(0.5, 0.5).setDisplaySize(32, 32);
-    egg.id = eggIdCounter;
+    objectIdCounter++;
+    eggObjects[objectIdCounter] = new Egg(objectIdCounter, playerObjects[player.id].team, player.x, player.y);
+    console.log(eggObjects[objectIdCounter]);
+    const egg = test.physics.add.image(eggObjects[objectIdCounter].x, eggObjects[objectIdCounter].y, 'egg').setOrigin(0.5, 0.5).setDisplaySize(32, 32);
+    egg.id = objectIdCounter;
     test.eggPhaserObjects.add(egg);
-    io.emit('newEgg', eggObjects[eggIdCounter]);
-    console.log("egg function called " + eggObjects[eggIdCounter].x);
+    io.emit('newObj', eggObjects[objectIdCounter]);
+    console.log("egg function called " + eggObjects[objectIdCounter].x);
+
+
+    test.time.addEvent({ delay: 10000, callback: hatchEgg(egg), callbackScope: this, loop: false });
+
+}
+
+function hatchEgg(eggAsset) {
+    //make an ant
+    //delete egg
+
+    io.emit('destroyObject', eggObjects[eggAsset.id]);
+    eggAsset.destroy();
+
+    delete sugarObjects[sugarPhaser.id];
+
+
+
 }
 
 
 function update() {
     this.playerPhaserObjects.getChildren().forEach((player) => {
-        const input = playerObjects[player.playerId].input;
+        const input = playerObjects[player.id].input;
 
-        //   console.log(players[player.playerId].target.x + " , " + players[player.playerId].target.y)
+        //   console.log(players[player.id].target.x + " , " + players[player.id].target.y)
 
         if (player.body.speed > 0) {
 
-            var distance = Phaser.Math.Distance.Between(player.x, player.y, playerObjects[player.playerId].target.x, playerObjects[player.playerId].target.y);
+            var distance = Phaser.Math.Distance.Between(player.x, player.y, playerObjects[player.id].target.x, playerObjects[player.id].target.y);
 
             //  4 is our distance tolerance, i.e. how close the source can get to the target
             //  before it is considered as being there. The faster it moves, the more tolerance is required.
@@ -147,15 +164,15 @@ function update() {
                 // player.body.reset(target.x, target.y);
                 player.setAcceleration(0);
                 player.setVelocity(0);
-                playerObjects[player.playerId].moving(false);
+                playerObjects[player.id].moving(false);
             }
         }
         //lay egg 
         if (input.q) {
             input.q = false;
             console.log("Debug: Trying to lay egg");
-            if (playerObjects[player.playerId].layEgg()) {
-                console.log("Debug: Trying to lay egg inner loop check");
+            if (playerObjects[player.id].layEgg()) {
+                //  console.log("Debug: Trying to lay egg inner loop check");
                 //TODO Test is makeEGG is allowed here?
                 makeEgg(player);
             }
@@ -169,16 +186,16 @@ function update() {
         // }
         // if (input.up) {
         //     this.physics.velocityFromRotation(player.rotation + 1.5, 200, player.body.acceleration);
-        //     players[player.playerId].moving(true);
+        //     players[player.id].moving(true);
         // } else {
-        //     players[player.playerId].moving(false);
+        //     players[player.id].moving(false);
         //     player.setAcceleration(0);
         //     player.setVelocity(0);
 
         // }
-        playerObjects[player.playerId].x = player.x;
-        playerObjects[player.playerId].y = player.y;
-        playerObjects[player.playerId].rotation = player.rotation;
+        playerObjects[player.id].x = player.x;
+        playerObjects[player.id].y = player.y;
+        playerObjects[player.id].rotation = player.rotation;
     });
     this.physics.world.wrap(this.playerPhaserObjects, 5);
     //var objects = { players, sugars };
@@ -186,24 +203,24 @@ function update() {
 
 }
 
-function handlePlayerInput(self, playerId, input) {
+function handlePlayerInput(self, id, input) {
     self.playerPhaserObjects.getChildren().forEach((player) => {
-        if (playerId === player.playerId) {
-            playerObjects[player.playerId].input = input;
+        if (id === player.id) {
+            playerObjects[player.id].input = input;
         }
     });
 }
 
-function handlePlayerInput2(self, playerId, target) {
+function handlePlayerInput2(self, id, target) {
     self.playerPhaserObjects.getChildren().forEach((player) => {
-        if (playerId === player.playerId) {
-            playerObjects[player.playerId].target = target;
+        if (id === player.id) {
+            playerObjects[player.id].target = target;
             self.physics.moveToObject(player, target, 200);
-            playerObjects[player.playerId].moving(true);
+            playerObjects[player.id].moving(true);
 
 
             //rotation
-            var angle = Phaser.Math.RAD_TO_DEG * Phaser.Math.Angle.Between(player.x, player.y, playerObjects[player.playerId].target.x, playerObjects[player.playerId].target.y);
+            var angle = Phaser.Math.RAD_TO_DEG * Phaser.Math.Angle.Between(player.x, player.y, playerObjects[player.id].target.x, playerObjects[player.id].target.y);
             player.setAngle(angle + 270 + 1);
 
         }
@@ -220,13 +237,13 @@ function addPlayer(self, playerInfo) {
     player.setDrag(100);
     // player.setAngularDrag(100);
     // player.setMaxVelocity(200);
-    player.playerId = playerInfo.playerId;
+    player.id = playerInfo.id;
     self.playerPhaserObjects.add(player);
 }
 
-function removePlayer(self, playerId) {
+function removePlayer(self, id) {
     self.playerPhaserObjects.getChildren().forEach((player) => {
-        if (playerId === player.playerId) {
+        if (id === player.id) {
             player.destroy();
         }
     });

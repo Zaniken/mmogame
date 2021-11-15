@@ -1,9 +1,7 @@
-class Egg {
+class Egg extends GenericObj {
     constructor(id, team, x, y) {
-        this.x = x;
-        this.y = y;
-        this.hp = 100;
-        this.team = team;
-        this.id = id;
+
+        //sets health to 100
+        super(id, true, "eggs", 2, team, 100, x, y);
     }
 }

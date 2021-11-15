@@ -1,9 +1,10 @@
-class Sugar {
+class Sugar extends GenericObj {
     constructor(id) {
-        this.x = Math.floor(Math.random() * 700) + 50;
-        this.y = Math.floor(Math.random() * 500) + 50;
-        this.id = id;
-        this.hp = 20;
+        let x = Math.floor(Math.random() * 700) + 50;
+        let y = Math.floor(Math.random() * 500) + 50;
+
+
+        super(id, true, "sugars", 1, "na", 20, x, y);
 
     }
     takeDamage() {

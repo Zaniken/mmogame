@@ -1,13 +1,16 @@
-class Queen {
+class Queen extends GenericObj {
     constructor(playerID) {
+
+        let x = Math.floor(Math.random() * 700) + 50;
+        let y = Math.floor(Math.random() * 500) + 50;
+        let team = (Math.floor(Math.random() * 2) == 0) ? 'red' : 'blue';
+
+        super(playerID, false, "players", 3, team, 100, x, y);
+        //  this.playerId = playerID;
+        // this.hp = 100;
         this.rotation = 0;
-        this.x = Math.floor(Math.random() * 700) + 50;
-        this.y = Math.floor(Math.random() * 500) + 50;
-        this.playerId = playerID;
-        this.hp = 100;
         this.energy = 0;
         this.animationState = "pause";
-        this.team = (Math.floor(Math.random() * 2) == 0) ? 'red' : 'blue';
         this.target = new Phaser.Math.Vector2();
         this.input = {
             //lay egg
@@ -35,9 +38,9 @@ class Queen {
     getEnergy() {
         this.energy += 10;
     }
-    
-    getHealth(){
-        this.health+=5;
+
+    getHealth() {
+        this.health += 5;
     }
     layEgg() {
         console.log(this.energy);
