@@ -9,4 +9,7 @@ class GenericObj {
         this.group = group;
         this.depth = depth;
     }
+    takeDamage() {
+        this.hp -= 10;
+    }
 }

@@ -1,6 +1,8 @@
-const playerObjects = {};
-const sugarObjects = {};
-const eggObjects = {};
+const everyObject = {};
+
+//const objContainer = { players: everyObject, sugars: everyObject, eggs: everyObject, ants: everyObject }
+var phaserContainer = {};
+
 
 var test;
 
@@ -26,6 +28,7 @@ const config = {
 
 function preload() {
     // this.load.image('ship', 'assets/spaceShips_001.png');
+    this.load.spritesheet('ant', 'assets/ant.png', { frameWidth: 32, frameHeight: 32 });
     this.load.spritesheet('queen', 'assets/ant.png', { frameWidth: 32, frameHeight: 32 });
     this.load.spritesheet('sugar', 'assets/sugar.png', { frameWidth: 32, frameHeight: 32 });
     this.load.spritesheet('egg', 'assets/egg.png', { frameWidth: 32, frameHeight: 32 });
@@ -39,23 +42,25 @@ function create() {
     io.on('connection', function(socket) {
         console.log('a user connected');
         // create a new player and add it to our players object
-        playerObjects[socket.id] = new Queen(socket.id);
+        everyObject[socket.id] = new Queen(socket.id);
         // add player to server
-        addPlayer(self, playerObjects[socket.id]);
+        addPlayer(self, everyObject[socket.id]);
         // send the players object to the new player
-        socket.emit('currentObjects', playerObjects);
-        socket.emit("currentObjects", sugarObjects);
-        socket.emit('currentObjects', eggObjects);
+        socket.emit('currentObjects', everyObject);
+
         // update all other players of the new player
-        socket.broadcast.emit('newObj', playerObjects[socket.id]);
+        socket.broadcast.emit('newObj', everyObject[socket.id]);
         socket.on('disconnect', function() {
             console.log('user disconnected');
             // remove player from server
-            removePlayer(self, socket.id);
+            //removePlayer(self, socket.id);
             // remove this player from our players object
-            delete playerObjects[socket.id];
+            // delete everyObject[socket.id];
             // emit a message to all players to remove this player
-            io.emit('disconnectUser', socket.id);
+            // io.emit('disconnectUser', socket.id);
+
+            removeObject(everyObject[socket.id]);
+
         });
         // when a player moves, update the player data
         socket.on('playerInput', function(inputData) {
@@ -74,74 +79,123 @@ function create() {
     // sugar timer stuff 
     this.sugarPhaserObjects = this.physics.add.group();
     this.eggPhaserObjects = this.physics.add.group();
+    this.antPhaserObjects = this.physics.add.group();
+    phaserContainer = { sugars: this.sugarPhaserObjects, eggs: this.eggPhaserObjects, players: this.playerPhaserObjects, ants: this.antPhaserObjects }
     test = this;
     //this.monsterTimer = game.time.events.loop(Phaser.Timer.SECOND, this.addMonster, this); <- old ps2 
-    this.timedEventSugar = this.time.addEvent({ delay: 10000, callback: makeSugar, callbackScope: this, loop: true });
+    this.timedEventSugar = this.time.addEvent({ delay: 5000, callback: makeSugar, callbackScope: this, loop: true });
 
     //collision stuff
-    this.physics.add.overlap(this.sugarPhaserObjects, this.playerPhaserObjects, antSugar);
+    this.physics.add.overlap(this.sugarPhaserObjects, this.playerPhaserObjects, attack);
+    this.physics.add.overlap(this.eggPhaserObjects, this.playerPhaserObjects, attack);
+    this.physics.add.overlap(this.antPhaserObjects, this.playerPhaserObjects, attack);
+
 }
 
 //player eating sugar
-function antSugar(sugarPhaser, playerPhaser) {
-    // console.log(playerObjects); var = {obj qeen queen}
-    //console.log(sugarObjects); var {1: sugar, 2: sugar}
-    // console.log(this.sugars); == undefined
-    // console.log(this.players); == undefined
-    if (playerObjects[playerPhaser.id].input.e) {
-        playerObjects[playerPhaser.id].input.e = false;
-        console.log("attcking sugar");
-        sugarObjects[sugarPhaser.id].takeDamage();
-        playerObjects[playerPhaser.id].getHealth();
-        playerObjects[playerPhaser.id].getEnergy();
-        if (sugarObjects[sugarPhaser.id].hp <= 0) {
+// function antSugar(sugarPhaser, playerPhaser) {
+//     // console.log(playerObjects); var = {obj qeen queen}
+//     //console.log(sugarObjects); var {1: sugar, 2: sugar}
+//     // console.log(this.sugars); == undefined
+//     // console.log(this.players); == undefined
+//     if (everyObject[playerPhaser.id].input.e) {
+//         everyObject[playerPhaser.id].input.e = false;
+//         console.log("attcking sugar");
+//         everyObject[sugarPhaser.id].takeDamage();
+//         everyObject[playerPhaser.id].getHealth();
+//         everyObject[playerPhaser.id].getEnergy();
+//         if (everyObject[sugarPhaser.id].hp <= 0) {
 
-            io.emit('destroyObject', sugarObjects[sugarPhaser.id]);
-            sugarPhaser.destroy();
+//             io.emit('destroyObject', everyObject[sugarPhaser.id]);
+//             sugarPhaser.destroy();
 
-            delete sugarObjects[sugarPhaser.id];
+//             delete everyObject[sugarPhaser.id];
+//         }
+//     }
+// }
+
+//player eating sugar
+function attack(deffendPhaser, attackPhaser) {
+
+    // console.log(attackPhaser);
+    let attackObj = everyObject[attackPhaser.id];
+    let deffendObj = everyObject[deffendPhaser.id];
+    //todo figure out
+    if (typeof attackObj !== 'undefined' && typeof deffendObj !== 'undefined') {
+        if (attackObj.input.e) {
+            if (attackObj.input.e) {
+                attackObj.input.e = false;
+                console.log("attcking sugar");
+                deffendObj.takeDamage();
+                attackObj.getHealth();
+                attackObj.getEnergy();
+                if (deffendObj.hp <= 0) {
+
+                    removeObject(deffendObj);
+                }
+            }
         }
     }
 }
+
+
 var objectIdCounter = 0;
 
 function makeSugar() {
     var self = this;
     objectIdCounter++;
-    sugarObjects[objectIdCounter] = new Sugar(objectIdCounter);
-    const sugar = self.physics.add.image(sugarObjects[objectIdCounter].x, sugarObjects[objectIdCounter].y, 'sugar').setOrigin(0.5, 0.5).setDisplaySize(32, 32);
+    everyObject[objectIdCounter] = new Sugar(objectIdCounter);
+    const sugar = self.physics.add.image(everyObject[objectIdCounter].x, everyObject[objectIdCounter].y, 'sugar').setOrigin(0.5, 0.5).setDisplaySize(32, 32);
     sugar.id = objectIdCounter;
     self.sugarPhaserObjects.add(sugar);
-    io.emit('newObj', sugarObjects[objectIdCounter]);
-    console.log("Sugar function called " + sugarObjects[objectIdCounter].x);
+    io.emit('newObj', everyObject[objectIdCounter]);
+    console.log("Sugar function called " + everyObject[objectIdCounter].x);
 }
 //var objectIdCounter = 0;
+
 
 function makeEgg(player) {
     // var self = this;
     console.log("makeegg was ran");
     objectIdCounter++;
-    eggObjects[objectIdCounter] = new Egg(objectIdCounter, playerObjects[player.id].team, player.x, player.y);
-    console.log(eggObjects[objectIdCounter]);
-    const egg = test.physics.add.image(eggObjects[objectIdCounter].x, eggObjects[objectIdCounter].y, 'egg').setOrigin(0.5, 0.5).setDisplaySize(32, 32);
+    everyObject[objectIdCounter] = new Egg(objectIdCounter, everyObject[player.id].team, player.x, player.y);
+    console.log(everyObject[objectIdCounter]);
+    const egg = test.physics.add.image(everyObject[objectIdCounter].x, everyObject[objectIdCounter].y, 'egg').setOrigin(0.5, 0.5).setDisplaySize(32, 32);
     egg.id = objectIdCounter;
     test.eggPhaserObjects.add(egg);
-    io.emit('newObj', eggObjects[objectIdCounter]);
-    console.log("egg function called " + eggObjects[objectIdCounter].x);
+    io.emit('newObj', everyObject[objectIdCounter]);
+    console.log("egg function called " + everyObject[objectIdCounter].x);
 
 
-    test.time.addEvent({ delay: 10000, callback: hatchEgg(egg), callbackScope: this, loop: false });
+    //  test.time.addEvent({ delay: 100000, callback: hatchEgg(egg), callbackScope: this, loop: false });
+    test.timerTest = test.time.delayedCall(10000, hatchEgg, [egg], this);
+}
 
+function testMethod(egg) {
+    console.log("test ran" + egg.x);
 }
 
 function hatchEgg(eggAsset) {
     //make an ant
     //delete egg
 
-    io.emit('destroyObject', eggObjects[eggAsset.id]);
-    eggAsset.destroy();
 
-    delete sugarObjects[sugarPhaser.id];
+    objectIdCounter++;
+    console.log("Egg hatched");
+    everyObject[objectIdCounter] = new Ant(objectIdCounter, everyObject[eggAsset.id].team, eggAsset.x, eggAsset.y);
+    console.log(everyObject[objectIdCounter]);
+    const ant = test.physics.add.image(everyObject[objectIdCounter].x, everyObject[objectIdCounter].y, 'ant').setOrigin(0.5, 0.5).setDisplaySize(32, 32);
+    ant.id = objectIdCounter;
+    test.antPhaserObjects.add(ant);
+    io.emit('newObj', everyObject[objectIdCounter]);
+
+
+
+    // io.emit('destroyObject', everyObject[eggAsset.id]);
+    // eggAsset.destroy();
+
+    // delete everyObject[eggAsset.id];
+    removeObject(everyObject[eggAsset.id]);
 
 
 
@@ -150,13 +204,13 @@ function hatchEgg(eggAsset) {
 
 function update() {
     this.playerPhaserObjects.getChildren().forEach((player) => {
-        const input = playerObjects[player.id].input;
+        const input = everyObject[player.id].input;
 
         //   console.log(players[player.id].target.x + " , " + players[player.id].target.y)
 
         if (player.body.speed > 0) {
 
-            var distance = Phaser.Math.Distance.Between(player.x, player.y, playerObjects[player.id].target.x, playerObjects[player.id].target.y);
+            var distance = Phaser.Math.Distance.Between(player.x, player.y, everyObject[player.id].target.x, everyObject[player.id].target.y);
 
             //  4 is our distance tolerance, i.e. how close the source can get to the target
             //  before it is considered as being there. The faster it moves, the more tolerance is required.
@@ -164,14 +218,14 @@ function update() {
                 // player.body.reset(target.x, target.y);
                 player.setAcceleration(0);
                 player.setVelocity(0);
-                playerObjects[player.id].moving(false);
+                everyObject[player.id].moving(false);
             }
         }
         //lay egg 
         if (input.q) {
             input.q = false;
             console.log("Debug: Trying to lay egg");
-            if (playerObjects[player.id].layEgg()) {
+            if (everyObject[player.id].layEgg()) {
                 //  console.log("Debug: Trying to lay egg inner loop check");
                 //TODO Test is makeEGG is allowed here?
                 makeEgg(player);
@@ -193,20 +247,20 @@ function update() {
         //     player.setVelocity(0);
 
         // }
-        playerObjects[player.id].x = player.x;
-        playerObjects[player.id].y = player.y;
-        playerObjects[player.id].rotation = player.rotation;
+        everyObject[player.id].x = player.x;
+        everyObject[player.id].y = player.y;
+        everyObject[player.id].rotation = player.rotation;
     });
     this.physics.world.wrap(this.playerPhaserObjects, 5);
     //var objects = { players, sugars };
-    io.emit('playerUpdates', playerObjects);
+    io.emit('playerUpdates', everyObject);
 
 }
 
 function handlePlayerInput(self, id, input) {
     self.playerPhaserObjects.getChildren().forEach((player) => {
         if (id === player.id) {
-            playerObjects[player.id].input = input;
+            everyObject[player.id].input = input;
         }
     });
 }
@@ -214,13 +268,13 @@ function handlePlayerInput(self, id, input) {
 function handlePlayerInput2(self, id, target) {
     self.playerPhaserObjects.getChildren().forEach((player) => {
         if (id === player.id) {
-            playerObjects[player.id].target = target;
+            everyObject[player.id].target = target;
             self.physics.moveToObject(player, target, 200);
-            playerObjects[player.id].moving(true);
+            everyObject[player.id].moving(true);
 
 
             //rotation
-            var angle = Phaser.Math.RAD_TO_DEG * Phaser.Math.Angle.Between(player.x, player.y, playerObjects[player.id].target.x, playerObjects[player.id].target.y);
+            var angle = Phaser.Math.RAD_TO_DEG * Phaser.Math.Angle.Between(player.x, player.y, everyObject[player.id].target.x, everyObject[player.id].target.y);
             player.setAngle(angle + 270 + 1);
 
         }
@@ -229,8 +283,20 @@ function handlePlayerInput2(self, id, target) {
 
 
 }
+//removes the asset and object
+function removeObject(obj) {
+    io.emit('destroyObject', obj);
+
+    phaserContainer[obj.group].getChildren().forEach((pobj) => {
+        if (obj.id === pobj.id) {
+            pobj.destroy();
+        }
+    });
 
 
+    delete everyObject[obj.id];
+
+}
 
 function addPlayer(self, playerInfo) {
     const player = self.physics.add.image(playerInfo.x, playerInfo.y, 'queen').setOrigin(0.5, 0.5).setDisplaySize(32, 32);
