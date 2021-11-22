@@ -1,8 +1,6 @@
 const everyObject = {};
 
-//const objContainer = { players: everyObject, sugars: everyObject, eggs: everyObject, ants: everyObject }
 var phaserContainer = {};
-
 
 var test;
 
@@ -52,12 +50,6 @@ function create() {
         socket.broadcast.emit('newObj', everyObject[socket.id]);
         socket.on('disconnect', function() {
             console.log('user disconnected');
-            // remove player from server
-            //removePlayer(self, socket.id);
-            // remove this player from our players object
-            // delete everyObject[socket.id];
-            // emit a message to all players to remove this player
-            // io.emit('disconnectUser', socket.id);
 
             removeObject(everyObject[socket.id]);
 
@@ -92,29 +84,6 @@ function create() {
 
 }
 
-//player eating sugar
-// function antSugar(sugarPhaser, playerPhaser) {
-//     // console.log(playerObjects); var = {obj qeen queen}
-//     //console.log(sugarObjects); var {1: sugar, 2: sugar}
-//     // console.log(this.sugars); == undefined
-//     // console.log(this.players); == undefined
-//     if (everyObject[playerPhaser.id].input.e) {
-//         everyObject[playerPhaser.id].input.e = false;
-//         console.log("attcking sugar");
-//         everyObject[sugarPhaser.id].takeDamage();
-//         everyObject[playerPhaser.id].getHealth();
-//         everyObject[playerPhaser.id].getEnergy();
-//         if (everyObject[sugarPhaser.id].hp <= 0) {
-
-//             io.emit('destroyObject', everyObject[sugarPhaser.id]);
-//             sugarPhaser.destroy();
-
-//             delete everyObject[sugarPhaser.id];
-//         }
-//     }
-// }
-
-//player eating sugar
 function attack(deffendPhaser, attackPhaser) {
 
     // console.log(attackPhaser);
@@ -138,7 +107,6 @@ function attack(deffendPhaser, attackPhaser) {
     }
 }
 
-
 var objectIdCounter = 0;
 
 function makeSugar() {
@@ -151,8 +119,6 @@ function makeSugar() {
     io.emit('newObj', everyObject[objectIdCounter]);
     console.log("Sugar function called " + everyObject[objectIdCounter].x);
 }
-//var objectIdCounter = 0;
-
 
 function makeEgg(player) {
     // var self = this;
@@ -176,10 +142,6 @@ function testMethod(egg) {
 }
 
 function hatchEgg(eggAsset) {
-    //make an ant
-    //delete egg
-
-
     objectIdCounter++;
     console.log("Egg hatched");
     everyObject[objectIdCounter] = new Ant(objectIdCounter, everyObject[eggAsset.id].team, eggAsset.x, eggAsset.y);
@@ -189,18 +151,8 @@ function hatchEgg(eggAsset) {
     test.antPhaserObjects.add(ant);
     io.emit('newObj', everyObject[objectIdCounter]);
 
-
-
-    // io.emit('destroyObject', everyObject[eggAsset.id]);
-    // eggAsset.destroy();
-
-    // delete everyObject[eggAsset.id];
     removeObject(everyObject[eggAsset.id]);
-
-
-
 }
-
 
 function update() {
     this.playerPhaserObjects.getChildren().forEach((player) => {
@@ -252,7 +204,7 @@ function update() {
         everyObject[player.id].rotation = player.rotation;
     });
     this.physics.world.wrap(this.playerPhaserObjects, 5);
-    //var objects = { players, sugars };
+
     io.emit('playerUpdates', everyObject);
 
 }
@@ -279,9 +231,6 @@ function handlePlayerInput2(self, id, target) {
 
         }
     });
-
-
-
 }
 //removes the asset and object
 function removeObject(obj) {
@@ -292,10 +241,7 @@ function removeObject(obj) {
             pobj.destroy();
         }
     });
-
-
     delete everyObject[obj.id];
-
 }
 
 function addPlayer(self, playerInfo) {
@@ -307,12 +253,6 @@ function addPlayer(self, playerInfo) {
     self.playerPhaserObjects.add(player);
 }
 
-function removePlayer(self, id) {
-    self.playerPhaserObjects.getChildren().forEach((player) => {
-        if (id === player.id) {
-            player.destroy();
-        }
-    });
-}
+
 const game = new Phaser.Game(config);
 window.gameLoaded();
