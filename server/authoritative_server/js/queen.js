@@ -11,6 +11,7 @@ class Queen extends GenericObj {
         this.rotation = 0;
         this.energy = 0;
         this.animationState = "pause";
+        this.movementSpeed = 200;
         this.target = new Phaser.Math.Vector2();
         this.input = {
             //lay egg
@@ -24,23 +25,23 @@ class Queen extends GenericObj {
 
     moving(movement) {
 
-        if (movement) {
-            // console.log("test");
-            this.animationState = "move";
-        } else {
-            this.animationState = "pause";
-        }
+            if (movement) {
+                // console.log("test");
+                this.animationState = "move";
+            } else {
+                this.animationState = "pause";
+            }
 
-    }
-    takeDamage() {
-        this.hp -= 10;
-    }
+        }
+        // takeDamage() {
+        //     this.hp -= 10;
+        // }
     getEnergy() {
         this.energy += 10;
     }
 
     getHealth() {
-        this.health += 5;
+        this.hp += 5;
     }
     layEgg() {
         console.log(this.energy);
@@ -51,5 +52,14 @@ class Queen extends GenericObj {
         } else {
             return false;
         }
+    }
+    attack() {
+        if (this.input.e) {
+            this.input.e = false;
+            this.getEnergy();
+            this.getHealth();
+            return 10;
+        }
+        return 0;
     }
 }

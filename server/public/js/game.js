@@ -16,6 +16,7 @@ var game = new Phaser.Game(config);
 function preload() {
     // this.load.image('ship', 'assets/spaceShips_001.png');
     // this.load.image('otherPlayer', 'assets/enemyBlack5.png');
+    this.load.spritesheet('ants', 'assets/ant.png', { frameWidth: 32, frameHeight: 32 });
     this.load.spritesheet('players', 'assets/ant.png', { frameWidth: 32, frameHeight: 32 });
     this.load.spritesheet('sugars', 'assets/sugar.png', { frameWidth: 32, frameHeight: 32 });
     this.load.spritesheet('eggs', 'assets/egg.png', { frameWidth: 32, frameHeight: 32 });
@@ -29,6 +30,7 @@ function create() {
     this.socket = io();
     this.players = this.add.group();
     this.sugars = this.add.group();
+    this.ants = this.add.group();
     this.eggs = this.add.group();
 
     this.anims.create({
@@ -77,13 +79,7 @@ function create() {
     //         }
     //     });
     // });
-    this.socket.on('destroyEgg', function(eggId) {
-        self.eggs.getChildren().forEach(function(egg) {
-            if (eggId === egg.id) {
-                egg.destroy();
-            }
-        });
-    });
+
 
     // this.socket.on('currentPlayers', function(players) {
     //     Object.keys(players).forEach(function(id) {
@@ -105,20 +101,36 @@ function create() {
             }
         });
     });
-    this.socket.on('playerUpdates', function(players) {
-        Object.keys(players).forEach(function(id) {
+    this.socket.on('playerUpdates', function(objs) {
+        Object.keys(objs).forEach(function(id) {
+
+
+
+
             self.players.getChildren().forEach(function(player) {
-                if (players[id].id === player.id) {
-                    player.setRotation(players[id].rotation);
-                    player.setPosition(players[id].x, players[id].y);
-                    player.anims.play(String(players[id].animationState), true)
+                if (objs[id].id === player.id) {
+                    player.setRotation(objs[id].rotation);
+                    player.setPosition(objs[id].x, objs[id].y);
+                    player.anims.play(String(objs[id].animationState), true)
                         // console.log(id + " " + players[id].animationState)
                 }
+
+
                 // if (players[id].animationState === 'moving') {
                 //     player.play('move')
                 //     console.log("moving")
                 // }
             });
+
+            self.ants.getChildren().forEach(function(player) {
+                if (objs[id].id === player.id) {
+                    player.setRotation(objs[id].rotation);
+                    player.setPosition(objs[id].x, objs[id].y);
+                    player.anims.play(String(objs[id].animationState), true)
+                        // console.log(id + " " + players[id].animationState)
+                }
+            });
+
         });
     });
     this.socket.on('newObj', function(obj) {
@@ -245,5 +257,6 @@ function displayAsset(self, assetInfoObject) {
 
     //   self.players.add(player); same thing
     self[assetInfoObject.group].add(asset);
+    console.log(assetInfoObject.group);
 
 }

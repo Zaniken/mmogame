@@ -63,7 +63,7 @@ function create() {
         //target input for playermovement
         socket.on('playerTarget', function(target) {
             //  console.log("Socket read click")
-            handlePlayerInput2(self, socket.id, target);
+            setPhaserMoveTo(everyObject[socket.id], target);
 
         });
     });
@@ -72,15 +72,22 @@ function create() {
     this.sugarPhaserObjects = this.physics.add.group();
     this.eggPhaserObjects = this.physics.add.group();
     this.antPhaserObjects = this.physics.add.group();
-    phaserContainer = { sugars: this.sugarPhaserObjects, eggs: this.eggPhaserObjects, players: this.playerPhaserObjects, ants: this.antPhaserObjects }
+    phaserContainer = { sugars: this.sugarPhaserObjects, eggs: this.eggPhaserObjects, players: this.playerPhaserObjects, ants: this.antPhaserObjects };
     test = this;
     //this.monsterTimer = game.time.events.loop(Phaser.Timer.SECOND, this.addMonster, this); <- old ps2 
     this.timedEventSugar = this.time.addEvent({ delay: 5000, callback: makeSugar, callbackScope: this, loop: true });
 
-    //collision stuff
+    //collision stuff for player
     this.physics.add.overlap(this.sugarPhaserObjects, this.playerPhaserObjects, attack);
     this.physics.add.overlap(this.eggPhaserObjects, this.playerPhaserObjects, attack);
     this.physics.add.overlap(this.antPhaserObjects, this.playerPhaserObjects, attack);
+
+    //collision stuff for ants
+    this.physics.add.overlap(this.antPhaserObjects, this.antPhaserObjects, attack);
+    this.physics.add.overlap(this.eggPhaserObjects, this.antPhaserObjects, attack);
+    this.physics.add.overlap(this.sugarPhaserObjects, this.antPhaserObjects, attack);
+
+
 
 }
 
@@ -91,19 +98,19 @@ function attack(deffendPhaser, attackPhaser) {
     let deffendObj = everyObject[deffendPhaser.id];
     //todo figure out
     if (typeof attackObj !== 'undefined' && typeof deffendObj !== 'undefined') {
-        if (attackObj.input.e) {
-            if (attackObj.input.e) {
-                attackObj.input.e = false;
-                console.log("attcking sugar");
-                deffendObj.takeDamage();
-                attackObj.getHealth();
-                attackObj.getEnergy();
-                if (deffendObj.hp <= 0) {
+        if (deffendObj.team !== attackObj.team || deffendObj.team === "undefined") {
 
-                    removeObject(deffendObj);
-                }
+
+            // console.log(deffendObj);
+            deffendObj.takeDamage(attackObj.attack());
+            // attackObj.getHealth();
+            // attackObj.getEnergy();
+            if (deffendObj.hp <= 0) {
+                removeObject(deffendObj);
+
             }
         }
+
     }
 }
 
@@ -134,7 +141,7 @@ function makeEgg(player) {
 
 
     //  test.time.addEvent({ delay: 100000, callback: hatchEgg(egg), callbackScope: this, loop: false });
-    test.timerTest = test.time.delayedCall(10000, hatchEgg, [egg], this);
+    test.timerTest = test.time.delayedCall(5000, hatchEgg, [egg], this);
 }
 
 function testMethod(egg) {
@@ -148,6 +155,7 @@ function hatchEgg(eggAsset) {
     console.log(everyObject[objectIdCounter]);
     const ant = test.physics.add.image(everyObject[objectIdCounter].x, everyObject[objectIdCounter].y, 'ant').setOrigin(0.5, 0.5).setDisplaySize(32, 32);
     ant.id = objectIdCounter;
+    ant.setDrag(100);
     test.antPhaserObjects.add(ant);
     io.emit('newObj', everyObject[objectIdCounter]);
 
@@ -155,6 +163,8 @@ function hatchEgg(eggAsset) {
 }
 
 function update() {
+
+
     this.playerPhaserObjects.getChildren().forEach((player) => {
         const input = everyObject[player.id].input;
 
@@ -203,8 +213,41 @@ function update() {
         everyObject[player.id].y = player.y;
         everyObject[player.id].rotation = player.rotation;
     });
-    this.physics.world.wrap(this.playerPhaserObjects, 5);
 
+    this.antPhaserObjects.getChildren().forEach((ant) => {
+        everyObject[ant.id].ai.setTask(everyObject);
+
+        var targetObj = everyObject[ant.id].ai.getTask();
+        // debugger;
+        if (typeof targetObj !== 'undefined') {
+            // var target = new Phaser.Math.Vector2();
+            // target.x = targetObj.x;
+            // target.y = targetObj.y;
+
+            var distance = Phaser.Math.Distance.Between(ant.x, ant.y, targetObj.x, targetObj.y);
+
+
+            // console.log("Innerloop");
+            setPhaserMoveTo(everyObject[ant.id], targetObj);
+            everyObject[ant.id].x = ant.x;
+            everyObject[ant.id].y = ant.y;
+            everyObject[ant.id].rotation = ant.rotation;
+
+
+
+            if (distance < 4) {
+                // player.body.reset(target.x, target.y);
+                ant.setAcceleration(0);
+                ant.setVelocity(0);
+                everyObject[ant.id].moving(false);
+            }
+            // debugger;
+        }
+
+
+    });
+    this.physics.world.wrap(this.playerPhaserObjects, 5);
+    // console.log(everyObject);
     io.emit('playerUpdates', everyObject);
 
 }
@@ -217,18 +260,21 @@ function handlePlayerInput(self, id, input) {
     });
 }
 
-function handlePlayerInput2(self, id, target) {
-    self.playerPhaserObjects.getChildren().forEach((player) => {
-        if (id === player.id) {
-            everyObject[player.id].target = target;
-            self.physics.moveToObject(player, target, 200);
-            everyObject[player.id].moving(true);
+function setPhaserMoveTo(obj, target) {
+    //  console.log("Ran: " + obj);
+    let id = obj.id;
+    //debugger;
+    phaserContainer[obj.group].getChildren().forEach((phaserObj) => {
+        if (id === phaserObj.id) {
+            everyObject[phaserObj.id].target = target;
+            test.physics.moveToObject(phaserObj, target, everyObject[phaserObj.id].movementSpeed);
+            everyObject[phaserObj.id].moving(true);
 
-
+            //debugger;
             //rotation
-            var angle = Phaser.Math.RAD_TO_DEG * Phaser.Math.Angle.Between(player.x, player.y, everyObject[player.id].target.x, everyObject[player.id].target.y);
-            player.setAngle(angle + 270 + 1);
-
+            var angle = Phaser.Math.RAD_TO_DEG * Phaser.Math.Angle.Between(phaserObj.x, phaserObj.y, everyObject[phaserObj.id].target.x, everyObject[phaserObj.id].target.y);
+            phaserObj.setAngle(angle + 270 + 1);
+            //  debugger;
         }
     });
 }

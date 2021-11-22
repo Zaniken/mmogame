@@ -9,7 +9,24 @@ class GenericObj {
         this.group = group;
         this.depth = depth;
     }
-    takeDamage() {
-        this.hp -= 10;
+    takeDamage(amount) {
+        this.hp -= amount;
     }
+
+    getGenericObj() {
+        return new EvenMoreGenericObj(this.id, this.x, this.y, this.group, this.depth, this.team);
+    }
+
+}
+class EvenMoreGenericObj {
+
+    constructor(id, x, y, group, depth, team) {
+        this.id = id;
+        this.x = x;
+        this.y = y;
+        this.group = group;
+        this.depth = depth;
+        this.team = team;
+    }
+
 }
