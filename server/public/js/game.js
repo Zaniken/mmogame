@@ -151,6 +151,8 @@ function create() {
                     player.anims.play(String(objs[id].animationState), true)
 
                     player.label.setPosition(objs[id].x, objs[id].y - 20);
+                    player.pointsLabel.setText("Your score: " +
+                        objs[id].points);
                     // console.log(id + " " + players[id].animationState)
                 }
 
@@ -307,6 +309,13 @@ function displayAsset(self, assetInfoObject) {
         asset.label.font = "Arial";
         asset.label.setOrigin(0.5, 0.5);
         asset.label.setDepth(4);
+
+        asset.pointsLabel = self.add.text(20, 30, "Your score: " +
+            assetInfoObject.points);
+        //asset.pointsLabel.setPosition(20, 30);
+
+
+
     }
 
 

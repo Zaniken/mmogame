@@ -11,6 +11,7 @@ class Queen extends GenericObj {
         this.playername = playername;
         this.rotation = 0;
         this.energy = 0;
+        this.points = 0;
         this.animationState = "pause";
         this.movementSpeed = 200;
         this.target = new Phaser.Math.Vector2();
@@ -23,6 +24,7 @@ class Queen extends GenericObj {
 
 
     };
+
 
     moving(movement) {
 
@@ -62,5 +64,9 @@ class Queen extends GenericObj {
             return 10;
         }
         return 0;
+    }
+    getPoints() {
+        this.points++;
+        console.log(this.points);
     }
 }

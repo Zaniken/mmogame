@@ -119,6 +119,9 @@ function attack(deffendPhaser, attackPhaser) {
             // attackObj.getEnergy();
             if (deffendObj.hp <= 0) {
                 removeObject(deffendObj);
+                if (attackObj.group === "players") {
+                    attackObj.getPoints();
+                }
 
             }
         }
