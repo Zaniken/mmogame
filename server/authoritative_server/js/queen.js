@@ -1,5 +1,5 @@
 class Queen extends GenericObj {
-    constructor(playerID) {
+    constructor(playername, playerID) {
 
         let x = Math.floor(Math.random() * 700) + 50;
         let y = Math.floor(Math.random() * 500) + 50;
@@ -8,6 +8,7 @@ class Queen extends GenericObj {
         super(playerID, false, "players", 3, team, 100, x, y);
         //  this.playerId = playerID;
         // this.hp = 100;
+        this.playername = playername;
         this.rotation = 0;
         this.energy = 0;
         this.animationState = "pause";

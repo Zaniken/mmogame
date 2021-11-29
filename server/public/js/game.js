@@ -4,6 +4,9 @@ var config = {
     width: 800,
     height: 600,
     backgroundColor: '#4488aa',
+    dom: {
+        createContainer: true
+    },
     scene: {
         preload: preload,
         create: create,
@@ -11,15 +14,20 @@ var config = {
 
     }
 };
+//game started only used to prevent user input before provding username
+var gameStarted = false;
 var game = new Phaser.Game(config);
 
 function preload() {
+    this.load.html("form", "login.html");
     // this.load.image('ship', 'assets/spaceShips_001.png');
     // this.load.image('otherPlayer', 'assets/enemyBlack5.png');
     this.load.spritesheet('ants', 'assets/ant.png', { frameWidth: 32, frameHeight: 32 });
     this.load.spritesheet('players', 'assets/ant.png', { frameWidth: 32, frameHeight: 32 });
     this.load.spritesheet('sugars', 'assets/sugar.png', { frameWidth: 32, frameHeight: 32 });
     this.load.spritesheet('eggs', 'assets/egg.png', { frameWidth: 32, frameHeight: 32 });
+    //this.load.image('background', 'assets/grass.jpg');
+
 }
 
 var cursors;
@@ -32,6 +40,35 @@ function create() {
     this.sugars = this.add.group();
     this.ants = this.add.group();
     this.eggs = this.add.group();
+
+
+
+    cursors = this.input.keyboard.addKeys("Q,E", false);
+    this.qKeyPressed = false;
+    this.eKeyPressed = false;
+
+
+    this.nameInput = this.add.dom(400, 200).createFromCache("form");
+
+    this.returnKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
+
+    this.returnKey.on("down", event => {
+        let name = this.nameInput.getChildByName("name");
+        if (name.value != "") {
+            console.log("Hello, " + name.value);
+            this.socket.emit('initPlayer', name.value);
+            this.nameInput.destroy();
+            this.returnKey.enabled = false;
+            gameStarted = true;
+        }
+    });
+
+
+
+
+
+    //   this.add.image(400, 0, 'background');
+
 
     this.anims.create({
         key: "move",
@@ -112,7 +149,9 @@ function create() {
                     player.setRotation(objs[id].rotation);
                     player.setPosition(objs[id].x, objs[id].y);
                     player.anims.play(String(objs[id].animationState), true)
-                        // console.log(id + " " + players[id].animationState)
+
+                    player.label.setPosition(objs[id].x, objs[id].y - 20);
+                    // console.log(id + " " + players[id].animationState)
                 }
 
 
@@ -149,9 +188,7 @@ function create() {
     var target = new Phaser.Math.Vector2();
 
 
-    cursors = this.input.keyboard.addKeys("Q,E");
-    this.qKeyPressed = false;
-    this.eKeyPressed = false;
+
     // this.upKeyPressed = false;
 
 
@@ -169,7 +206,9 @@ function create() {
         //debug.clear().lineStyle(1, 0x00ff00);
         // debug.lineBetween(0, target.y, 800, target.y);
         // debug.lineBetween(target.x, 0, target.x, 600);
-        this.socket.emit('playerTarget', target);
+        if (gameStarted) {
+            this.socket.emit('playerTarget', target);
+        }
 
     }, this);
 
@@ -247,6 +286,8 @@ function update() {
 
 //generic display function
 function displayAsset(self, assetInfoObject) {
+
+
     const asset = self.add.sprite(assetInfoObject.x, assetInfoObject.y, assetInfoObject.group).setOrigin(0.5, 0.5).setDisplaySize(32, 32);
     if (assetInfoObject.team === 'blue') asset.setTint(0x0000ff);
     else if (assetInfoObject.team === 'red') asset.setTint(0xff0000);
@@ -258,5 +299,15 @@ function displayAsset(self, assetInfoObject) {
     //   self.players.add(player); same thing
     self[assetInfoObject.group].add(asset);
     console.log(assetInfoObject.group);
+
+    if (assetInfoObject.group === "players") {
+        console.log(assetInfoObject);
+        console.log(assetInfoObject.playername);
+        asset.label = self.add.text(assetInfoObject.x, assetInfoObject.y, assetInfoObject.playername);
+        asset.label.font = "Arial";
+        asset.label.setOrigin(0.5, 0.5);
+        asset.label.setDepth(4);
+    }
+
 
 }

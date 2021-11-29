@@ -40,9 +40,21 @@ function create() {
     io.on('connection', function(socket) {
         console.log('a user connected');
         // create a new player and add it to our players object
-        everyObject[socket.id] = new Queen(socket.id);
+        //  everyObject[socket.id] = new Queen(socket.id);
+
+
+        socket.on('initPlayer', function(playername) {
+            everyObject[socket.id] = new Queen(playername, socket.id);
+            console.log("Init player ran " + playername);
+            addPlayer(self, everyObject[socket.id]);
+            socket.emit('currentObjects', everyObject);
+
+        });
+
+
+
         // add player to server
-        addPlayer(self, everyObject[socket.id]);
+
         // send the players object to the new player
         socket.emit('currentObjects', everyObject);
 
@@ -156,6 +168,7 @@ function hatchEgg(eggAsset) {
     const ant = test.physics.add.image(everyObject[objectIdCounter].x, everyObject[objectIdCounter].y, 'ant').setOrigin(0.5, 0.5).setDisplaySize(32, 32);
     ant.id = objectIdCounter;
     ant.setDrag(100);
+    //ant.setBounce(1);
     test.antPhaserObjects.add(ant);
     io.emit('newObj', everyObject[objectIdCounter]);
 
@@ -247,7 +260,7 @@ function update() {
 
     });
     this.physics.world.wrap(this.playerPhaserObjects, 5);
-    // console.log(everyObject);
+    //console.log(everyObject);
     io.emit('playerUpdates', everyObject);
 
 }
@@ -281,13 +294,14 @@ function setPhaserMoveTo(obj, target) {
 //removes the asset and object
 function removeObject(obj) {
     io.emit('destroyObject', obj);
-
-    phaserContainer[obj.group].getChildren().forEach((pobj) => {
-        if (obj.id === pobj.id) {
-            pobj.destroy();
-        }
-    });
-    delete everyObject[obj.id];
+    if (obj !== undefined) {
+        phaserContainer[obj.group].getChildren().forEach((pobj) => {
+            if (obj.id === pobj.id) {
+                pobj.destroy();
+            }
+        });
+        delete everyObject[obj.id];
+    }
 }
 
 function addPlayer(self, playerInfo) {
